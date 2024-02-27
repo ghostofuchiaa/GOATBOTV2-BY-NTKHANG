@@ -17,20 +17,21 @@
     "ignoreCommand": []
   },
   "adminBot": [
-    "100053549552408",
-    ""
+    "100089550064027",
+    "",
+    "100000377396525"
   ],
   "whiteListMode": {
     "enable": false,
     "whiteListIds": [],
     "notes": "if you enable this feature, only the ids in the whiteListIds section can use the bot"
   },
-  "OWNER": "Cliff Vincent",
-  "AGE": "18",
+  "OWNER": "Aadi Gupta",
+  "AGE": "24",
   "GENDER": "MALE",
-  "nickNameBot": "Yazkybot",
-  "FACEBOOK": "https://www.facebook.com/swordigo.swordslush",
-  "prefix": "✓",
+  "nickNameBot": "• ▄︻デ❲•𝐀𝐀𝐃𝐈•❳ 𝙡𝙚𝙜𝙚𝙣𝙙❹❷⓿ 🙄🤠══━一",
+  "FACEBOOK": "https://www.facebook.com/100089550064027",
+  "prefix": "/",
   "database": {
     "type": "sqlite",
     "uriMongodb": "",
@@ -59,14 +60,12 @@
   },
   "serverUptime": {
     "enable": false,
-    "port": 3000,
+    "port": 3001,
     "socket": {
       "enable": true,
       "channelName": "uptime",
-      "verifyToken": "AJ3mQqe9wrL8sF5NAwJuSteH",
-			"url": "${process.env.DevURL}",
-			"url2": "https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER"
-		}
+      "verifyToken": ""
+    }
   },
   "autoRestart": {
     "time": 3600000,
@@ -74,9 +73,8 @@
   },
   "autoUptime": {
     "enable": true,
-    "timeInterval": 86400000,
-    "url": "${process.env.DevURL}.sisko.replit.dev/",
-		"url2": "https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER",
+    "timeInterval": 500,
+    "url": "https://uptime.botrandom30.repl.co",
     "notes": "the value of timeInterval is seconds, url is the url you want to send the request to (automatically detected for hosting glitch or replit)"
   },
   "autoLoadScripts": {
