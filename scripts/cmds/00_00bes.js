@@ -1,54 +1,39 @@
-const axios = require('axios');
+const { get } = require('axios');
 
 module.exports = {
 	config: {
-		name: 'bes',
-		version: '1.0',
-		author: 'Hexa',
-		role: 0,
-		category: 'Ai-Chat',
-		shortDescription: {
-			en: `bes-ai`
-		},
-		longDescription: {
-			en: `bes-ai`
-		},
-		guide: {
-			en: '{pn}besh [query]'
-		},
+		name: 'video2gif',
+    aliases: ['v2g', 'videotogif', 'v2gif', 'vtog'],
+    version: "1.6.9",
+		author: "𝐀𝐒𝐈𝐅 𝐱𝟔𝟗",
+    role: 0,
+		countDown: 1,
+		category: "goatbot",
+		longDescription: "Video to gif converter",
+		guide: "{pn} [link] or [reply to a video]"
 	},
 
-	onStart: async function ({ api, event, args, usersData }) {
-		try {
-			const query = args.join(" ") || "hello";
-			const { name } = (await usersData.get(event.senderID));
+	onStart: async function ({ message, event, args }) {
 
-			if (query) {
-				api.setMessageReaction("⏳", event.messageID, (err) => console.log(err), true);
-				const processingMessage = await api.sendMessage(
-					`Asking Besh. Please wait a moment...`,
-					event.threadID
-				);
+		try{
+		const d = event.messageReply?.attachments[0]?.url || args.join(' ');
 
-				const apiUrl = `https://lianeapi.onrender.com/@unregistered/api/besh?key=j86bwkwo-8hako-12C&userName=${encodeURIComponent(name || "a user")}&query=${encodeURIComponent(query)}`;
-				const response = await axios.get(apiUrl);
+        if (!d) {
+          return message.reply('❌| Please provide a link or reply to a video.', event.threadID);
+        }
 
-				if (response.data && response.data.message) {
-					const trimmedMessage = response.data.message.trim();
-					api.setMessageReaction("✅", event.messageID, (err) => console.log(err), true);
-					await api.sendMessage({ body: trimmedMessage }, event.threadID, event.messageID);
+	    const { data } = await get(`https://all-image-genator-d1p.onrender.com/dipto/gif?url=${encodeURIComponent(d)}`);
 
-					console.log(`Sent Besh's response to the user`);
-				} else {
-					throw new Error(`Invalid or missing response from Besh API`);
-				}
+	message.reply({ 
+		body: `
+✅ | GIF LINK: ${data.data}
+🔰 | Author: ${data.author}`,
+    attachment: await global.utils.getStreamFromURL(data.data)
+  }, event.threadID);
 
-				await api.unsendMessage(processingMessage.messageID);
-			}
-		} catch (error) {
-			console.error(`❌ | Failed to get Besh's response: ${error.message}`);
-			const errorMessage = `❌ | An error occurred. You can try typing your query again or resending it. There might be an issue with the server that's causing the problem, and it might resolve on retrying.`;
-			api.sendMessage(errorMessage, event.threadID);
-		}
-	},
-};
+  } catch (err){
+	  console.log(err);
+	 message.reply(err, event.threadID);
+   }
+  }
+}
