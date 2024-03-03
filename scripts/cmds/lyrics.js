@@ -1,45 +1,84 @@
 const axios = require("axios");
+const fs = require("fs-extra");
+const path = require("path");
+const ytdl = require("@neoxr/ytdl-core");
+const yts = require("yt-search");
 
 module.exports = {
   config: {
     name: "lyrics",
     version: "1.0",
-    author: "MILAN",
-    countDown: 5,
+    author: "Orochi Team",
+    countDown: 1,
     role: 0,
     shortDescription: {
-      vi: "Nhận lời bài hát",
-      en: "Get song lyrics"
+      en: "Get lyrics for a song",
     },
     longDescription: {
-      vi: "Nhận lời bài hát với Hình ảnh của họ",
-      en: "Get song lyrics with their Images"
+      en: "This command allows you to get the lyrics for a song. Usage: !lyrics <song name>",
     },
-    category: "info",
+    category: "music",
     guide: {
-      en: "{pn} <song name>"
-    }
+      en: "{prefix}lyrics <song name>",
+    },
   },
-  
-  onStart: async function ({ api, event, args, message }) {
+
+  onStart: async function ({ api, event, args }) {
+    const songName = args.join(" ");
+    if (!songName) {
+      api.sendMessage(
+        "⛔ 𝗜𝗡𝗩𝗔𝗟𝗜𝗗 𝗧𝗜𝗧𝗟𝗘\n\n❁ Please provide a song name!",
+        event.threadID,
+        event.messageID
+      );
+      return;
+    }
+
     try {
-      const lyrics = args.join(' ');
-      if (!lyrics) {
-        return api.sendMessage("Please provide a song name!", event.threadID, event.messageID);
+      // Fetch lyrics
+      const lyricsResponse = await axios.get(
+        `https://lyrics-api.replit.app/aryan?songName=${encodeURIComponent(songName)}`
+      );
+      const { lyrics, title, artist, image } = lyricsResponse.data;
+
+      // Fetch song
+      const searchResults = await yts(songName);
+      if (!searchResults.videos.length) {
+        api.sendMessage("❌ 𝗦𝗢𝗡𝗚 𝗡𝗢𝗧 𝗙𝗢𝗨𝗡𝗗\n\n❁ Sorry, song not found!", event.threadID, event.messageID);
+        return;
       }
-      const { data } = await axios.get(`https://milanbhandari.imageapi.repl.co/lyrics`, {
-        params: {
-          query: lyrics 
-        }
+
+      const video = searchResults.videos[0];
+      const videoUrl = video.url;
+      const stream = ytdl(videoUrl, { filter: "audioonly" });
+      const fileName = `music.mp3`;
+      const filePath = path.join(__dirname, "tmp", fileName);
+
+      stream.pipe(fs.createWriteStream(filePath));
+
+      stream.on("response", () => {
+        console.info("[DOWNLOADER]", "Starting download now!");
       });
-      const messageData = {
-        body: `❏Title: ${data.title || ''}\n\n❏Artist: ${data.artist || ''}\n\n❏Lyrics:\n\n ${data.lyrics || ''}`,
-        attachment: await global.utils.getStreamFromURL(data.image)
-      };
-      return api.sendMessage(messageData, event.threadID);
+
+      stream.on("info", (info) => {
+        console.info("[DOWNLOADER]", `Downloading ${info.videoDetails.title} by ${info.videoDetails.author.name}`);
+      });
+
+      stream.on("end", async () => {
+        const audioStream = fs.createReadStream(filePath);
+        let message = `📌 𝗛𝗘𝗥𝗘 𝗜𝗦 𝗟𝗬𝗥𝗜𝗖𝗦\n\n🎧 𝗧𝗜𝗧𝗟𝗘\n➪ ${title}\n👑 𝗔𝗥𝗧𝗜𝗦𝗧 \n➪ ${artist} \n\n🎶 𝗟𝗬𝗥𝗜𝗖𝗦\n➪ ${lyrics}`;
+        let attachment = await global.utils.getStreamFromURL(image);
+
+        api.sendMessage({ body: message, attachment }, event.threadID, (err, info) => {
+          let id = info.messageID;
+          api.sendMessage({ attachment: audioStream }, event.threadID, () => {
+            api.setMessageReaction("✅", id, () => {}, true);
+          });
+        });
+      });
     } catch (error) {
       console.error(error);
-      return api.sendMessage("An error occurred while fetching lyrics!", event.threadID, event.messageID);
+      api.sendMessage("Sorry, there was an error getting the lyrics and song!", event.threadID, event.messageID);
     }
-  }
+  },
 };
