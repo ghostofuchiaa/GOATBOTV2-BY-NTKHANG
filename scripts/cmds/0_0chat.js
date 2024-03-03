@@ -1,50 +1,47 @@
-// Assuming you have a global object to store data
-global.botData = {};
+const axios = require('axios');
+
+const Prefixes = [
+  'orochi',
+  'ai',
+  'chatgpt',
+  'gpt',
+  '.ai',
+];
 
 module.exports = {
-		config: {
-				name: "chat",
-				version: "1.2",
-				description: "Command to turn on/off chat",
-				guide: {
-						vi: "Dùng để bật/tắt chức năng chat",
-						en: "Used to turn on/off chat functionality"
-				},
-				category: "utility",
-				countDown: 15,
-				role: 1,
-				author: "Cliff"
-		},
+  config: {
+    name: "chatgpt",
+    version: 1.0,
+    author: "Aryan Chauhan",
+    longDescription: "AI",
+    category: "CHATGPT",
+    guide: {
+      en: "{p} questions",
+    },
+  },
+  onStart: async function () {},
+  onChat: async function ({ api, event, args, message }) {
+    try {
+      
+      const prefix = Prefixes.find((p) => event.body && event.body.toLowerCase().startsWith(p));
+      if (!prefix) {
+        return; // Invalid prefix, ignore the command
+      }
+      const prompt = event.body.substring(prefix.length).trim();
+   if (!prompt) {
+        await message.reply("📝 𝗖𝗵𝗮𝘁𝗚𝗣𝗧:\n\nHello! How can I assist you today.");
+        return;
+      }
 
-		onStart: async function ({ message, args, role, getLang }) {
-				if (args[0] === "on") {
-						if (role < 1) {
-								return message.reply(getLang("onlyAdmin")); // Replace with your language function
-						}
-						// Enable chat
-						global.botData.chatEnabled = true;
-						message.reply("Chat is now enabled. Members can chat freely.");
-				} else if (args[0] === "off") {
-						if (role < 1) {
-								return message.reply(getLang("onlyAdmin")); // Replace with your language function
-						}
-						// Disable chat
-						global.botData.chatEnabled = false;
-						message.reply("Chat is now disabled. Members will be kicked when chatting.");
-				}
-		},
 
-		onChat: async function ({ message, event, api, getLang }) {
-				const chatEnabled = global.botData.chatEnabled === undefined ? true : global.botData.chatEnabled;
+      const response = await axios.get(`https://AryanAPI.replit.app/gpt?prompt=${encodeURIComponent(prompt)}`);
+      const answer = response.data.answer;
 
-				if (!chatEnabled) {
-						// Kick user if chat is disabled
-						api.removeUserFromGroup(event.senderID, event.threadID, (err) => {
-								if (err) {
-										console.error(err);
-								}
-						});
-						message.reply("Chat off detected. You have been kicked from the group.");
-				}
-		}
+ 
+    await message.reply(`📝 𝗖𝗵𝗮𝘁𝗚𝗣𝗧:\n\n${answer}`);
+
+    } catch (error) {
+      console.error("Error:", error.message);
+    }
+  }
 };
