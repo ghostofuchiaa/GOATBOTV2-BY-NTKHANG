@@ -1,78 +1,45 @@
 const axios = require("axios");
+const Tesseract = require("tesseract.js");
 
 module.exports = {
-	config: {
-		name: "tempnum",
-		version: "1.0", 
-		author: "Rishad",
-		countDown: 5,
-		role: 0,
-		shortDescription: {
-			en: "generate temporary phone numbers and retrieve inbox messages",
-			vi: "generate temporary phone numbers and retrieve inbox messages",
-		},
-		longDescription: {
-			en: "generate temporary phone numbers and retrieve inbox messages",
-			vi: "generate temporary phone numbers and retrieve inbox messages",
-		},
-		category: "tool",
-		guide: {
-			en: "{pn} gen (1-10)\n{pn} inbox (number) | (1-10)",
-			vi: "{pn} gen (1-10)\n{pn} inbox (number) | (1-10)",
-		},
-	},
+  config: {
+    name: "i2t",
+    aliases: ["ocr2"],
+    version: "1.0",
+    author: "404",
+    category: "goatbot",
+    longDescription: "Image to Text finder"
+    },
+  onStart: async function ({ message, event }) {
+    try {
 
-	onStart: async function ({ api, args, event }) {
-		const command = args[0];
+      if (!event.messageReply || !event.messageReply.attachments) {
+        return message.reply("Reply to an image");
+      }
 
-		try {
-			if (command === "gen") {
-				let num = args[1];
+      const imageAttachment = event.messageReply.attachments[0];
+      if (imageAttachment.type !== "photo") {
+        return message.reply("Reply to a picture only._.");
+      }
 
-				num = num || 1;
+      // Get the image URL
+      const imageUrl = imageAttachment.url;
 
-				if (isNaN(num) || num < 1 || num > 100) {
-					return api.sendMessage("Please provide a valid number between 1 and 100 for generating temporary phone numbers.", event.threadID);
-				}
+      // Download the image
+      const imageResponse = await axios.get(imageUrl, { responseType: "arraybuffer" });
+      const imageBuffer = Buffer.from(imageResponse.data, "binary");
 
-				const response = await axios.get(`https://for-devs.onrender.com/api/tempnum/gen?num=${num}&apikey=fuck`);
-				const tempNumbers = response.data;
+      // Perform OCR on the image
+      const { data } = await Tesseract.recognize(imageBuffer, "eng");
 
+      // Extract the recognized text
+      const extractedText = data.text;
 
-				const formattedNumbers = tempNumbers.map((tempNum) => {
-					return `Country: ${tempNum.country}\nNumber: ${tempNum.number}\nGenerated ${tempNum.time}`;
-				});
-
-				return api.sendMessage(`Generated temporary numbers:\n\n${formattedNumbers.join("\n\n")}`, event.threadID);
-
-			} else if (command === "inbox") {
-				let [phone, num] = args.slice(1).join(" ").split("|").map((str) => str.trim());
-
-				if (!phone || isNaN(phone)) {
-					return api.sendMessage("Please provide a valid phone number for retrieving inbox messages.", event.threadID);
-				}
-
-				num = num || 1;
-
-				if (isNaN(num)) {
-					return api.sendMessage("Please provide a valid number for retrieving inbox messages.", event.threadID);
-				}
-
-				const inboxResponse = await axios.get(`https://for-devs.onrender.com/api/tempnum/inbox?phone=${phone}&num=${num}&apikey=fuck`);
-				const inboxMessages = inboxResponse.data;
-
-				const formattedMessages = inboxMessages.map((message) => {
-					return `${message.sms} - From: ${message.sender}`;
-				});
-
-				return api.sendMessage(`Inbox messages for ${phone}:\n\n${formattedMessages.join("\n\n")}\n\n`, event.threadID);
-
-			} else {
-				return api.sendMessage("Invalid command. Use {pn} gen (1-10) or {pn} inbox (number) | (1-10).", event.threadID);
-			}
-		} catch (error) {
-			console.error(error);
-			return api.sendMessage("An error occurred. Please try again later.", event.threadID);
-		}
-	}
+      // Reply with the extracted text
+      message.reply(`${extractedText}`);
+    } catch (error) {
+      console.error("Error", error);
+      message.reply("An error occurred while processing Image to Text.");
+    }
+  }
 };
