@@ -8,7 +8,7 @@ Do not alter the credited information any attempt to do so may result in a perma
 
 module.exports = {
 	config: {
-		name: "bayot",
+		name: "aadi",
 		version: "1.0",
 		author: "rehat--",
 		countDown: 5,
